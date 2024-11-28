@@ -77,7 +77,7 @@ func initializeDB() {
     if err != nil {
         log.Fatal("Error opening database: ", err)
     }
-    err = db.Ping() // Ping the database to check if the connection is alive
+    err = db.Ping() 
     if err != nil {
         log.Fatal("Error connecting to the database: ", err)
     }
@@ -92,7 +92,7 @@ func adminLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("Received POST request for admin login")
 
-	// Check if database is initialized
+	
 	if db == nil {
 		http.Error(w, "Database connection is not initialized", http.StatusInternalServerError)
 		return
@@ -103,10 +103,10 @@ func adminLogin(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	// Declare variables to hold email and password from the database
+	
 	var dbEmail, dbPassword string
 
-	// Query the database for the admin user by email
+	
 	err := db.QueryRow("SELECT email, password FROM users WHERE email = ?", email).Scan(&dbEmail, &dbPassword)
 	if err != nil {
 		// If no rows are found, return an error
@@ -114,7 +114,7 @@ func adminLogin(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 			return
 		}
-		// Log any other errors
+		
 		log.Fatal(err)
 	}
 
@@ -176,16 +176,16 @@ func generateVerificationCode() string {
 	return fmt.Sprintf("%06d", rand.Intn(1000000))
 }
 
-// Send the verification email via Mailgun
+
 func sendVerificationEmail(email, verificationCode string) error {
 	// Mailgun setup
-	domain := "sandboxba5d00dfe36c458890d2daad59e20d6d.mailgun.org" // Your Mailgun domain
-	apiKey := "0dab8a7942a0645ac642a5ab8c4e2c47-c02fd0ba-8a911cd8"               // Your Mailgun API key
+	domain := "sandboxba5d00dfe36c458890d2daad59e20d6d.mailgun.org" // My Mailgun domain
+	apiKey := "0dab8a7942a0645ac642a5ab8c4e2c47-c02fd0ba-8a911cd8"               // My Mailgun API key
 	mg := mailgun.NewMailgun(domain, apiKey)
 
-	// Create the email message
+	
 	message := mg.NewMessage(
-		"kinyanjui816@gmail.com", // Replace with your verified email
+		"kinyanjui816@gmail.com", 
 		"Email Verification Code",
 		fmt.Sprintf("Your verification code is: %s", verificationCode),
 		email,
@@ -211,7 +211,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
         Password string `json:"password"`
     }
 
-    // Parse the incoming JSON request body
+    /
     decoder := json.NewDecoder(r.Body)
     err := decoder.Decode(&user)
     if err != nil {
@@ -219,7 +219,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Check if the email already exists in the database
+    
     var existingUser struct {
         ID int
     }
@@ -258,7 +258,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// Verify API - Verify the user's email using the verification code
+
 func verifyEmail(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Email            string `json:"email"`
@@ -365,7 +365,7 @@ func saveOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("Received order:", order) 
-	// Prepare product details as comma-separated strings
+	
 	var productNames []string
 	var quantities []string
 	var unitPrices []string
@@ -379,12 +379,12 @@ func saveOrder(w http.ResponseWriter, r *http.Request) {
 		total += product.Total
 	}
 
-	// Convert product details to comma-separated strings
+	
 	productNamesStr := strings.Join(productNames, ",")
 	quantitiesStr := strings.Join(quantities, ",")
 	unitPricesStr := strings.Join(unitPrices, ",")
 
-	// Insert the order into the database
+	
 	query := "INSERT INTO orders (order_code, user_name, product_names, quantities, unit_prices, total, comment, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 	_, err = db.Exec(query, order.OrderCode, order.UserName, productNamesStr, quantitiesStr, unitPricesStr, total, order.Comment, time.Now())
 	if err != nil {
@@ -398,9 +398,9 @@ func saveOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// Get order details by order code
+
 func getOrder(w http.ResponseWriter, r *http.Request) {
-	// Get the order code from the query parameters
+	
 	orderCode := r.URL.Query().Get("orderCode")
 	if orderCode == "" {
 		http.Error(w, "Order code is required", http.StatusBadRequest)
@@ -429,8 +429,8 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 	// Prepare the products slice
 	var products []OrderProduct
 	for i := range productNames {
-		quantity, _ := strconv.Atoi(quantities[i]) // Use strconv.Atoi
-		unitPrice, _ := strconv.ParseFloat(unitPrices[i], 64) // Use strconv.ParseFloat
+		quantity, _ := strconv.Atoi(quantities[i]) // Using strconv.Atoi
+		unitPrice, _ := strconv.ParseFloat(unitPrices[i], 64) // Using strconv.ParseFloat
 		total := unitPrice * float64(quantity)
 	
 		products = append(products, OrderProduct{
@@ -532,7 +532,7 @@ func fetchAndBroadcastOrders() {
         orders, err := fetchOrders(db)
         if err != nil {
             log.Println("Error fetching orders:", err)
-            time.Sleep(5 * time.Second) // Retry after some time
+            time.Sleep(5 * time.Second) 
             continue
         }
 
@@ -568,22 +568,21 @@ func main() {
 
 	http.HandleFunc("/admin/login", adminLogin)
 	http.HandleFunc("/products", fetchProducts)
-	http.HandleFunc("/signup", signup)          // POST for user signup
-	http.HandleFunc("/verify", verifyEmail)     // POST for email verification
+	http.HandleFunc("/signup", signup)          
+	http.HandleFunc("/verify", verifyEmail)    
 	http.HandleFunc("/login", login)     
 	http.HandleFunc("/place-order", saveOrder)  
 	http.HandleFunc("/get-order", getOrder)
-     // POST for user login
-
+    
 	// Set up CORS middleware
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5174"}, // Allow frontend on port 5174
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"}, // Allow OPTIONS preflight
+		AllowedOrigins: []string{"http://localhost:5174"}, // Allow frontend on port 5174(CORS ERROR)
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"}, /
 		AllowedHeaders: []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 	})
 
-	// Apply CORS middleware to all handlers
+	
 	handler := c.Handler(http.DefaultServeMux)
 
 	// Start the server
